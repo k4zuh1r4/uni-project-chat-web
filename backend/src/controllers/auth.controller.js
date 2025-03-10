@@ -79,4 +79,16 @@ export const logout = (req, res) => {
     }
 }
 export const updateProfile = async (req, res) => {
+    try {
+        const { profilePicture } = req.body
+        const user = req.user._id
+        if (!profilePicture) {
+            return res.status(400).json({ message: "Profile picture is required" })
+        }
+        const uploadResponse = await cloudinary.uploader.upload(profilePicture)
+    }
+    catch (error) {
+        console.log(error)
+        res.status(500).json({ message: "Internal server error" })
+    }
 }
