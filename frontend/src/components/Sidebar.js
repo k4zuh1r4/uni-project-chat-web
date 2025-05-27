@@ -49,7 +49,6 @@ export const Sidebar = () => {
                     <span className="font-medium hidden lg:block">Contacts</span>
                 </div>
             </div>
-            {/*TODO: Add filter toggle*/}
             <div className="overflow-y-auto w-full py-3">
                 {users.map((user) => (
                     <button

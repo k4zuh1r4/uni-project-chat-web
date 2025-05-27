@@ -10,7 +10,7 @@ import { HomeNavbar } from '@/components/navbar'
 import { Eye, EyeOff } from 'lucide-react'
 import toast from 'react-hot-toast'
 export default function LoginPage() {
-    const { authUser, checkAuth, isCheckingAuth } = useAuthStore()
+    const { authUser, checkAuth, isCheckingAuth, onlineUsers } = useAuthStore()
     const router = useRouter()
     const [showPassword, setShowPassword] = React.useState(false)
     const [formData, setFormData] = React.useState({
@@ -50,7 +50,7 @@ export default function LoginPage() {
             <div className="flex items-center justify-center h-screen">
                 <Loader className="size-10 animate-spin" />
             </div>
-        );
+        )
     }
     return (
         <>
@@ -88,3 +88,4 @@ export default function LoginPage() {
         </>
     )
 }
+

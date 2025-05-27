@@ -26,9 +26,11 @@ export const MessageNavbar = () => {
                                 Profile
                             </Link>
                         </li>
-                        <li><button className="justify-between text-base-content">
-                            Settings
-                        </button></li>
+                        <li>
+                            <Link href="/dashboard/settings" className="justify-between text-base-content">
+                                Settings
+                            </Link>
+                        </li>
                         <Link href="/">
                             <li onClick={logout}>
                                 <button className="justify-between text-base-content">Logout</button>

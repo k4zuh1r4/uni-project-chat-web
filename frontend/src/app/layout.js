@@ -1,3 +1,4 @@
+import { ThemeProvider } from "@/utils/ThemeProvider";
 import "./globals.css";
 
 
@@ -7,7 +8,9 @@ export default function RootLayout({ children }) {
       <body
         className={`antialiased`}
       >
-        {children}
+        <ThemeProvider>
+          {children}
+        </ThemeProvider>
       </body>
     </html>
   );

@@ -1,5 +1,8 @@
 import Message from "../models/message.model.js"
 import User from "../models/user.model.js"
+import cloudinary from "../lib/cloudinary.js"
+import { getReceiverSocketID } from "../lib/socket.js"
+import { io } from "../lib/socket.js"
 export const sidebarList = async (req, res) => {
     try {
         const selfID = req.user._id
@@ -44,6 +47,10 @@ export const sendMessage = async (req, res) => {
             media: mediaURL
         })
         await newMessage.save()
+        const receiverSocketID = getReceiverSocketID(receiverID)
+        if (receiverSocketID) {
+            io.to(receiverSocketID).emit("newMessage", newMessage)
+        }
         res.status(201).json(newMessage)
     } catch (error) {
         console.log(error.message)

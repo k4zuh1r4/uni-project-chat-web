@@ -3,6 +3,7 @@ import React, { useState } from 'react'
 import { useAuthStore } from '@/lib/authStore.js'
 import { MessageNavbar } from '@/components/messageNavbar'
 import { Camera, User, Mail } from 'lucide-react'
+import Link from 'next/link'
 
 export default function Profile() {
     const { authUser, updateProfile, isUpdatingProfile } = useAuthStore()
@@ -131,14 +132,16 @@ export default function Profile() {
                         >
                             {isUpdatingProfile ? "Updating..." : "Update Profile"}
                         </button>
-                        <button
-                            type="button"
-                            className="btn btn-secondary"
-                            onClick={handleCancel}
-                            disabled={isUpdatingProfile}
-                        >
-                            Cancel
-                        </button>
+                        <Link href="/dashboard">
+                            <button
+                                type="button"
+                                className="btn btn-secondary w-full"
+                                onClick={handleCancel}
+                                disabled={isUpdatingProfile}
+                            >
+                                Cancel
+                            </button>
+                        </Link>
                     </form>
                 </div>
             </div>

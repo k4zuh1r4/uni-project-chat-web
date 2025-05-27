@@ -6,20 +6,16 @@ export const ChatHeader = () => {
     const { selectedUser, setSelectedUser } = useMessageStore()
     const { onlineUsers } = useAuthStore()
     if (!selectedUser) return null
-
     const isOnline = onlineUsers.includes(selectedUser._id)
 
     return (
         <div className="border-b border-base-300 p-3 flex items-center gap-3">
-            {/* Back button - only visible on mobile */}
             <button
                 onClick={() => setSelectedUser(null)}
                 className="lg:hidden p-1 rounded-full hover:bg-base-300"
             >
                 <ArrowLeft size={20} />
             </button>
-
-            {/* User avatar */}
             <div className="relative">
                 <img
                     src={selectedUser.profilePicture || selectedUser.avatar || "/avatar.png"}

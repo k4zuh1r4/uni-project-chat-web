@@ -8,24 +8,39 @@ export const MessageInput = () => {
     const fileInputRef = React.useRef(null)
     const { sendMessage } = useMessageStore()
     const handleImageChange = (e) => {
-        const file = e.target.files[0]
-        if (file) {
-            const reader = new FileReader()
-            reader.onloadend = () => {
-                setImagePreview(reader.result)
-            }
-            reader.readAsDataURL(file)
-        } else {
-            setImagePreview(null)
+        const file = e.target.files[0];
+        if (!file.type.startsWith("image/")) {
+            toast.error("Please select an image file");
+            return;
         }
-    }
-    const handleSendMessage = async () => {
 
+        const reader = new FileReader();
+        reader.onloadend = () => {
+            setImagePreview(reader.result);
+        };
+        reader.readAsDataURL(file);
+    }
+    const handleSendMessage = async (e) => {
+        e.preventDefault()
+        if (!text.trim() && !imagePreview) return;
+        try {
+            await sendMessage({
+                text: text.trim(),
+                media: imagePreview
+            })
+            setText('')
+            setImagePreview(null)
+            if (fileInputRef.current) {
+                fileInputRef.current.value = ""
+            }
+        } catch (error) {
+            console.error("Error sending message:", error)
+        }
     }
     const removeImage = () => {
         setImagePreview(null)
         if (fileInputRef.current) {
-            fileInputRef.current.value = null
+            fileInputRef.current.value = ""
         }
     }
     return (
