@@ -1,6 +1,7 @@
 import { generateToken } from "../lib/utils.js"
 import User from "../models/user.model.js"
 import bcrypt from "bcryptjs"
+import cloudinary from "../lib/cloudinary.js"
 export const register = async (req, res) => {
     const { fullName, email, password } = req.body
     try {
@@ -80,21 +81,73 @@ export const logout = (req, res) => {
 }
 export const updateProfile = async (req, res) => {
     try {
-        const { profilePicture } = req.body
-        const user = req.user._id
-        if (!profilePicture) {
-            return res.status(400).json({ message: "Profile picture is required" })
+        const { profilePicture, fullName, email } = req.body;
+        const userId = req.user._id;
+
+        // Create an update object
+        const updateData = {};
+
+        // Handle profile picture upload if provided
+        if (profilePicture) {
+            try {
+                // Check if the image is too large (limit to ~10MB)
+                if (profilePicture.length > 10000000) {
+                    return res.status(400).json({ message: "Profile picture is too large. Please use an image under 10MB." });
+                }
+
+                // Upload to cloudinary with specific options
+                const uploadResponse = await cloudinary.uploader.upload(profilePicture, {
+                    folder: "user_profiles",
+                    resource_type: "image",
+                    allowed_formats: ["jpg", "png", "jpeg", "gif"],
+                    transformation: [{ width: 500, height: 500, crop: "limit" }]
+                });
+
+                updateData.profilePicture = uploadResponse.secure_url;
+            } catch (cloudinaryError) {
+                console.error("Cloudinary upload error:", cloudinaryError);
+                return res.status(400).json({
+                    message: "Failed to upload profile picture. Please try a different image."
+                });
+            }
         }
-        const uploadResponse = await cloudinary.uploader.upload(profilePicture)
-    }
-    catch (error) {
-        console.log(error)
-        res.status(500).json({ message: "Internal server error" })
+
+        // Add other fields if provided
+        if (fullName) updateData.fullName = fullName;
+        if (email) updateData.email = email;
+
+        // Only proceed if there's something to update
+        if (Object.keys(updateData).length === 0) {
+            return res.status(400).json({ message: "No update data provided" });
+        }
+
+        const updatedUser = await User.findByIdAndUpdate(
+            userId,
+            updateData,
+            { new: true }
+        );
+
+        if (!updatedUser) {
+            return res.status(404).json({ message: "User not found" });
+        }
+
+        res.status(200).json({
+            _id: updatedUser._id,
+            fullName: updatedUser.fullName,
+            email: updatedUser.email,
+            profilePicture: updatedUser.profilePicture
+        });
+    } catch (error) {
+        console.error("Error in update profile:", error);
+        res.status(500).json({ message: "Internal server error", error: error.message });
     }
 }
 export const checkAuth = async (req, res) => {
     try {
         res.status(200).json(req.user)
+        if (!req.user) {
+            return res.status(401).json({ message: "Unauthorized" })
+        }
     }
     catch (error) {
         console.log(error)
