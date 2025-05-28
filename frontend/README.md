@@ -1,15 +1,15 @@
 ## Lập trình ứng dụng nâng cao - Nhóm 5
 Thành viên:
 
-Hoàng Đức Việt - 22110178
+Hoàng Đức Việt 
 
-Nguyễn Ngọc Minh - 
+Nguyễn Ngọc Minh 
 
-Tạ Văn Tuấn - 
+Tạ Văn Tuấn 
 
-Nguyễn Đức Mạnh -
+Nguyễn Đức Mạnh 
 
-Bạch Quang Minh - 
+Bạch Quang Minh 
 
 ## Ứng dụng Web chat trực tuyến
 
