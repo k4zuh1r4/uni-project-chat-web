@@ -17,7 +17,19 @@ export default function Home() {
           <div className="max-w-md">
             <h1 className="mb-5 text-5xl font-bold">Chat Application Project</h1>
             <p className="mb-5">
-              Group ?
+              Hoang Duc Viet
+            </p>
+            <p className="mb-5">
+              Nguyen Duc Manh
+            </p>
+            <p className="mb-5">
+              Ta Van Tuan
+            </p>
+            <p className="mb-5">
+              Nguyen Ngoc Minh
+            </p>
+            <p className="mb-5">
+              Bach Quang Minh
             </p>
             <button className="btn btn-primary">Get Started</button>
           </div>
