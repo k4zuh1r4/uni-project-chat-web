@@ -40,6 +40,11 @@ export const MessageNavbar = () => {
                             </Link>
                         </li>
                         <li>
+                            <Link href="/dashboard/friends" className="justify-between text-base-content">
+                                Friends
+                            </Link>
+                        </li>
+                        <li>
                             <Link href="/dashboard/settings" className="justify-between text-base-content">
                                 Settings
                             </Link>
