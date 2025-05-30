@@ -2,21 +2,8 @@
 import React from 'react'
 import { useAuthStore } from '@/lib/authStore.js'
 import Link from 'next/link'
-import { useRouter } from 'next/navigation'
-
 export const MessageNavbar = () => {
     const { logout, authUser } = useAuthStore()
-    const router = useRouter()
-
-    const handleLogout = () => {
-        try {
-            logout()
-            router.push('/')
-        } catch (error) {
-            console.error("Logout failed:", error)
-        }
-    }
-
     return (
         <div className="navbar bg-base-100 shadow-sm border-b-2 border-base-content/10">
             <div className="flex-1">
@@ -44,11 +31,11 @@ export const MessageNavbar = () => {
                                 Settings
                             </Link>
                         </li>
-                        <li>
-                            <button onClick={handleLogout} className="justify-between text-base-content">
-                                Logout
-                            </button>
-                        </li>
+                        <Link href="/">
+                            <li onClick={logout}>
+                                <button className="justify-between text-base-content">Logout</button>
+                            </li>
+                        </Link>
                     </ul>
                 </div>
             </div>

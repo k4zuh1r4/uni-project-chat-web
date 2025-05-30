@@ -17,6 +17,12 @@ export default function Profile() {
         const file = e.target.files[0]
         if (!file) return
 
+        // Check file size (max 5MB)
+        if (file.size > 5 * 1024 * 1024) {
+            toast.error("Image is too large. Please select an image under 5MB.");
+            return;
+        }
+
         const reader = new FileReader()
         reader.readAsDataURL(file)
         reader.onload = async () => {
