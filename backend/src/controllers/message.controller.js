@@ -3,20 +3,31 @@ import User from "../models/user.model.js"
 import cloudinary from "../lib/cloudinary.js"
 import { getReceiverSocketID } from "../lib/socket.js"
 import { io } from "../lib/socket.js"
+
 export const sidebarList = async (req, res) => {
     try {
         const selfID = req.user._id
-        const filteredList = await User.find({ _id: { $ne: selfID } }).select("-password")
-        res.status(200).json(filteredList)
+        // Get user with populated friends
+        const user = await User.findById(selfID).populate("friends", "-password")
+
+        // Return only friends instead of all users
+        res.status(200).json(user.friends)
     } catch (error) {
         console.log(error.message)
         res.status(500).json({ message: "Internal server error" })
     }
 }
+
 export const getMessages = async (req, res) => {
     try {
         const { id: targetID } = req.params
         const senderID = req.user._id
+
+        // Check if users are friends
+        const user = await User.findById(senderID)
+        if (!user.friends.includes(targetID)) {
+            return res.status(403).json({ message: "You can only view messages from friends" })
+        }
 
         const messages = await Message.find({
             $or: [
@@ -30,11 +41,19 @@ export const getMessages = async (req, res) => {
         res.status(500).json({ message: "Internal server error" })
     }
 }
+
 export const sendMessage = async (req, res) => {
     try {
         const { text, media } = req.body
         const { id: receiverID } = req.params
         const senderID = req.user._id
+
+        // Check if users are friends
+        const user = await User.findById(senderID)
+        if (!user.friends.includes(receiverID)) {
+            return res.status(403).json({ message: "You can only send messages to friends" })
+        }
+
         let mediaURL;
         if (media) {
             const uploadResponse = await cloudinary.uploader.upload(media)

@@ -1,6 +1,7 @@
 import express from "express"
 import authRoutes from "./routes/auth.route.js"
 import messageRoutes from "./routes/message.route.js"
+import friendRoutes from "./routes/friend.route.js"
 import dotenv from "dotenv"
 import cookieParser from "cookie-parser"
 import { OpenConnection } from "./lib/database.js"
@@ -16,6 +17,7 @@ app.use(cors({
 }))
 app.use("/api/auth", authRoutes)
 app.use("/api/messages", messageRoutes)
+app.use("/api/friends", friendRoutes)
 server.listen(PORT, () => {
     console.log("Server is running on deez nuts." + PORT)
     OpenConnection()
