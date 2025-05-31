@@ -2,6 +2,9 @@ import { generateToken } from "../lib/utils.js"
 import User from "../models/user.model.js"
 import bcrypt from "bcryptjs"
 import cloudinary from "../lib/cloudinary.js"
+import { sendOTPEmail } from "../lib/mail.js"
+import crypto from 'crypto'
+
 export const register = async (req, res) => {
     const { fullName, email, password } = req.body
     try {
@@ -11,65 +14,173 @@ export const register = async (req, res) => {
         else if (password.length < 6) {
             return res.status(400).json({ message: "Password must be at least 6 characters long" })
         }
-        const user = await User.findOne({ email })
-        if (user) {
+
+        const existingUser = await User.findOne({ email })
+        if (existingUser && existingUser.isVerified) {
             return res.status(400).json({ message: "User with this email already exists" })
         }
+
         const density = await bcrypt.genSalt(10)
         const hashedPassword = await bcrypt.hash(password, density)
-        const newUser = new User(
-            {
+
+        // Generate 6-digit OTP
+        const otp = crypto.randomInt(100000, 999999).toString()
+        const otpExpires = new Date(Date.now() + 10 * 60 * 1000) // 10 minutes
+
+        let user
+        if (existingUser && !existingUser.isVerified) {
+            // Update existing unverified user
+            user = await User.findByIdAndUpdate(existingUser._id, {
+                fullName,
+                password: hashedPassword,
+                otp,
+                otpExpires
+            }, { new: true })
+        } else {
+            // Create new user
+            user = new User({
                 fullName,
                 email,
-                password: hashedPassword
+                password: hashedPassword,
+                otp,
+                otpExpires,
+                isVerified: false
             })
-        if (newUser) {
-            generateToken(newUser._id, res)
-            await newUser.save()
-            res.status(201).json({
-                _id: newUser._id,
-                fullName: newUser.fullName,
-                email: newUser.email,
-                profilePicture: newUser.profilePicture
-            })
+            await user.save()
         }
-        else {
-            res.status(400).json({ message: "Invalid user data" })
-        }
+
+        // Send OTP email
+        await sendOTPEmail(email, otp, fullName)
+
+        res.status(201).json({
+            message: "Registration successful. Please check your email for OTP verification.",
+            userId: user._id,
+            email: user.email
+        })
     } catch (error) {
         console.log(error)
         res.status(500).json({ message: "Internal server error" })
     }
 }
+
+export const verifyOTP = async (req, res) => {
+    const { userId, otp } = req.body
+    try {
+        if (!userId || !otp) {
+            return res.status(400).json({ message: "User ID and OTP are required" })
+        }
+
+        const user = await User.findById(userId)
+        if (!user) {
+            return res.status(404).json({ message: "User not found" })
+        }
+
+        if (user.isVerified) {
+            return res.status(400).json({ message: "User is already verified" })
+        }
+
+        if (!user.otp || !user.otpExpires) {
+            return res.status(400).json({ message: "No OTP found. Please request a new one." })
+        }
+
+        if (new Date() > user.otpExpires) {
+            return res.status(400).json({ message: "OTP has expired. Please request a new one." })
+        }
+
+        if (user.otp !== otp) {
+            return res.status(400).json({ message: "Invalid OTP" })
+        }
+
+        // Verify user and clear OTP
+        user.isVerified = true
+        user.otp = null
+        user.otpExpires = null
+        await user.save()
+
+        // Generate token and log user in
+        generateToken(user._id, res)
+
+        res.status(200).json({
+            message: "Email verified successfully",
+            user: {
+                _id: user._id,
+                fullName: user.fullName,
+                email: user.email,
+                profilePicture: user.profilePicture,
+                isVerified: user.isVerified
+            }
+        })
+    } catch (error) {
+        console.log(error)
+        res.status(500).json({ message: "Internal server error" })
+    }
+}
+
+export const resendOTP = async (req, res) => {
+    const { userId } = req.body
+    try {
+        const user = await User.findById(userId)
+        if (!user) {
+            return res.status(404).json({ message: "User not found" })
+        }
+
+        if (user.isVerified) {
+            return res.status(400).json({ message: "User is already verified" })
+        }
+
+        // Generate new OTP
+        const otp = crypto.randomInt(100000, 999999).toString()
+        const otpExpires = new Date(Date.now() + 10 * 60 * 1000) // 10 minutes
+
+        user.otp = otp
+        user.otpExpires = otpExpires
+        await user.save()
+
+        // Send OTP email
+        await sendOTPEmail(user.email, otp, user.fullName)
+
+        res.status(200).json({ message: "OTP sent successfully" })
+    } catch (error) {
+        console.log(error)
+        res.status(500).json({ message: "Internal server error" })
+    }
+}
+
 export const login = async (req, res) => {
     const { email, password } = req.body
     try {
         const user = await User.findOne({ email })
         if (!user) {
-            res.status(400).json({ message: "Invalid email or password" })
+            return res.status(400).json({ message: "Invalid email or password" })
         }
-        else {
-            const isMatch = await bcrypt.compare(password, user.password)
-            if (!isMatch) {
-                res.status(400).json({ message: "Invalid email or password" })
-            }
-            else
-                if (isMatch) {
-                    generateToken(user._id, res)
-                    res.status(200).json({
-                        _id: user._id,
-                        fullName: user.fullName,
-                        email: user.email,
-                        profilePicture: user.profilePicture
-                    })
-                }
+
+        if (!user.isVerified) {
+            return res.status(400).json({
+                message: "Please verify your email first",
+                userId: user._id,
+                requiresVerification: true
+            })
         }
-    }
-    catch (error) {
+
+        const isMatch = await bcrypt.compare(password, user.password)
+        if (!isMatch) {
+            return res.status(400).json({ message: "Invalid email or password" })
+        }
+
+        generateToken(user._id, res)
+        res.status(200).json({
+            _id: user._id,
+            fullName: user.fullName,
+            email: user.email,
+            profilePicture: user.profilePicture,
+            isVerified: user.isVerified
+        })
+    } catch (error) {
         console.log(error)
         res.status(500).json({ message: "Internal server error" })
     }
 }
+
 export const logout = (req, res) => {
     try {
         res.cookie("jwt", "", { maxAge: 0 })

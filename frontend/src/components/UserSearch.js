@@ -79,7 +79,7 @@ export default function UserSearch({
                             />
                             <button
                                 type="submit"
-                                className="btn btn-primary"
+                                className="btn btn-primary p-3 my-3"
                                 disabled={isSearching || !searchTerm.trim()}
                             >
                                 {isSearching ? (

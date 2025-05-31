@@ -9,17 +9,21 @@ import { Loader } from "lucide-react"
 import { HomeNavbar } from '@/components/navbar'
 import { Eye, EyeOff } from 'lucide-react'
 import toast from 'react-hot-toast'
+import OTPVerification from '@/components/VerifyOTP'
+
 export default function LoginPage() {
-    const { authUser, checkAuth, isCheckingAuth, onlineUsers } = useAuthStore()
+    const { authUser, checkAuth, isCheckingAuth, pendingVerification } = useAuthStore()
     const router = useRouter()
     const [showPassword, setShowPassword] = React.useState(false)
+    const [showOTPVerification, setShowOTPVerification] = React.useState(false)
     const [formData, setFormData] = React.useState({
         email: "",
         password: ""
     })
     const { login, isLoggingIn } = useAuthStore()
+
     const validateForm = () => {
-        if (!/\S+@S+\.\S+/.test(formData.email)) {
+        if (!/\S+@\S+\.\S+/.test(formData.email)) {
             return toast.error("Invalid email address")
         }
         if (!formData.password) {
@@ -30,11 +34,27 @@ export default function LoginPage() {
         }
         return true
     }
-    const handleSubmit = (e) => {
+
+    const handleSubmit = async (e) => {
         e.preventDefault()
         const success = validateForm()
-        if (success) login(formData)
+        if (success) {
+            const result = await login(formData)
+            if (!result.success && result.requiresVerification) {
+                setShowOTPVerification(true)
+            }
+        }
     }
+
+    const handleBackToLogin = () => {
+        setShowOTPVerification(false)
+        // Clear password for security
+        setFormData({
+            ...formData,
+            password: ""
+        })
+    }
+
     useEffect(() => {
         checkAuth()
     }, [checkAuth])
@@ -52,6 +72,12 @@ export default function LoginPage() {
             </div>
         )
     }
+
+    // Show OTP verification if login failed due to unverified email
+    if (showOTPVerification && pendingVerification) {
+        return <OTPVerification onBack={handleBackToLogin} />
+    }
+
     return (
         <>
             <div className="bg-base-100">
@@ -64,12 +90,33 @@ export default function LoginPage() {
                         <form className='justify-center flex flex-col items-center' onSubmit={handleSubmit}>
                             <label className="input w-full mb-4">
                                 <Mail className="h-[1em] opacity-50" />
-                                <input className='px-3 py-2 my-2 w-full text-primary' type="input" required placeholder="Email" value={formData.email} onChange={(e) => setFormData({ ...formData, email: e.target.value })} />
+                                <input
+                                    className='px-3 py-2 my-2 w-full text-primary'
+                                    type="email"
+                                    required
+                                    placeholder="Email"
+                                    value={formData.email}
+                                    onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                                    disabled={isLoggingIn}
+                                />
                             </label>
                             <label className="input w-full mb-4">
                                 <Key className="h-[1em] opacity-50" />
-                                <input className='w-full text-primary' type={showPassword ? "text" : "password"} required placeholder="Password" value={formData.password} onChange={(e) => setFormData({ ...formData, password: e.target.value })} />
-                                <button className="absolute right-2 top-1/2 transform -translate-y-1/2 cursor-pointer" onClick={() => setShowPassword(!showPassword)}>
+                                <input
+                                    className='w-full text-primary'
+                                    type={showPassword ? "text" : "password"}
+                                    required
+                                    placeholder="Password"
+                                    value={formData.password}
+                                    onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                                    disabled={isLoggingIn}
+                                />
+                                <button
+                                    type="button"
+                                    className="absolute right-2 top-1/2 transform -translate-y-1/2 cursor-pointer"
+                                    onClick={() => setShowPassword(!showPassword)}
+                                    disabled={isLoggingIn}
+                                >
                                     {showPassword ? <EyeOff className="h-[1em] opacity-50" /> : <Eye className="h-[1em] opacity-50" />}
                                 </button>
                             </label>
@@ -78,7 +125,20 @@ export default function LoginPage() {
                                 <Link href="/todo1" className="link link-primary text-center my-3">Forgot password?</Link>
                             </div>
                             <div className="w-full flex justify-end">
-                                <button className="btn btn-xs sm:btn-sm md:btn-md lg:btn-lg bg-base-content text-primary-content my-8 py-5" type="submit">Login</button>
+                                <button
+                                    className="btn btn-xs sm:btn-sm md:btn-md lg:btn-lg bg-base-content text-primary-content my-8 py-5"
+                                    type="submit"
+                                    disabled={isLoggingIn}
+                                >
+                                    {isLoggingIn ? (
+                                        <>
+                                            <Loader className="w-4 h-4 animate-spin mr-2" />
+                                            Logging in...
+                                        </>
+                                    ) : (
+                                        "Login"
+                                    )}
+                                </button>
                             </div>
                         </form>
                     </div>
@@ -88,4 +148,3 @@ export default function LoginPage() {
         </>
     )
 }
-

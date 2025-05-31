@@ -20,7 +20,7 @@ export const MessageNavbar = () => {
     return (
         <div className="navbar bg-base-100 shadow-sm border-b-2 border-base-content/10">
             <div className="flex-1">
-                <a className="btn btn-ghost text-xl">Chat Application Project</a>
+                <Link href="/dashboard"><div className="btn btn-ghost text-xl">Chat Application Project</div></Link>
             </div>
             <div className="flex-none">
                 <div className="dropdown dropdown-end">
